@@ -1,0 +1,98 @@
+#comment strong {
+    color: #cf1861;
+}
+
+#blog_name {
+    margin-top: 80px;
+    color: #1bc1a1
+}
+
+.markdown-body h2,
+.markdown-body h3 {
+    color: #1bc1a1
+}
+
+
+code {
+    color: #a626a4;
+}
+
+body {
+    font-family: lato, sans-serif
+}
+
+.clippy {
+    margin-top: -3px;
+    position: relative;
+    top: 3px
+}
+
+.btn[disabled] .clippy {
+    opacity: .3
+}
+
+.snippet {
+    position: relative;
+    overflow: visible
+}
+
+
+.snippet .btn {
+    -webkit-transition: opacity .3s ease-in-out;
+    -o-transition: opacity .3s ease-in-out;
+    transition: opacity .3s ease-in-out;
+    opacity: 0;
+    padding: 2px 6px;
+    position: absolute;
+    right: 4px;
+    top: 4px;
+    cursor: pointer;
+    background-color: white;
+    margin: 0;
+    border: 0;
+    padding-left: 10px;
+    padding-right: 10px;
+    font-size: 1.2em;
+}
+
+.snippet:hover .btn,
+.snippet .btn:focus {
+    opacity: 1
+}
+
+@media screen and (max-width: 768px) {
+    .snippet .btn {
+        opacity: 1
+    }
+}
+
+.example + .snippet .btn {
+    top: 22px;
+    right: 2px
+}
+
+@media screen and (max-width: 410px) {
+    .support li {
+        width: 45%
+    }
+}
+
+@media screen and (max-width: 290px) {
+    .support li {
+        width: 100%
+    }
+}
+
+@media screen and (max-width: 540px) {
+    .title {
+        font-size: 48px
+    }
+
+    .subtitle {
+        font-size: 22px
+    }
+
+    .credits {
+        font-size: 22px
+    }
+}

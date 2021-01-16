@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>博客编写</title>
+    <script src="../static/md/showdown.min.js"></script>
+    <link rel="stylesheet" href="../static/md/github.css">
+    <link rel="stylesheet" href="../static/md/styles/atom-one-light.css">
+    <script src="../static/md/highlight.pack.js"></script>
+    <link rel="stylesheet" href="../static/index.css">
+    <script src="../static/vue.min.js"></script>
+    <script src="../static/index.js"></script>
+    <script src="../static/axios.min.js"></script>
+
+</head>
+
+<body>
+    <div id="app">
+        <div style="position: fixed;width: 100%;z-index: 400;background-color: white;top: 0">
+            <div style="display: block;margin-top: 10px">
+                <div style="display: inline-block;width: 65%;vertical-align: middle;">
+                    <el-input type="textarea" placeholder="标题" :autosize="{ maxRows: 1}" v-model="textarea1"
+                        style="font-size: 24px;color: black;font-weight: bold;font-family: PingFang SC;"></el-input>
+                </div>
+                <div style="display: inline-block;width: 10%;vertical-align: middle;">
+                    <el-select v-model="valueclass" placeholder="分类" style="z-index: 9990">
+                        <el-option v-for="item in options" :key="item.value" :label="item.label" :value="item.value">
+                        </el-option>
+                    </el-select>
+                </div>
+                <div style="display: inline-block;width: 10%;vertical-align: middle;">
+                    <el-button type="primary" @click="release()" v-loading="loading">发布文章</el-button>
+                </div>
+            </div>
+            <div style="display: block">
+                <div style="display: inline-block">
+                    <el-upload action="#" accept="image/png, image/jpeg," name="file_name"
+                        :before-upload="beforeAvatarUpload" :show-file-list="false" with-credentials
+                        :on-success="upload_success" :on-error="upload_error" :http-request="handleRequest">
+                        <el-button type="primary" plain>插入图片</el-button>
+                    </el-upload>
+                </div>
+                <div style="display: inline-block">
+                    <el-upload action="#" name="file_name" :show-file-list="false" with-credentials
+                        :on-success="upload_success_file" :on-error="upload_error" :http-request="handleRequest">
+                        <el-button type="primary" plain>上传附件</el-button>
+                    </el-upload>
+                </div>
+            </div>
+            <div v-if="onuploading" style="width: 50%">
+                <el-progress color="#00BFFF" :text-inside="true" :stroke-width="20" :percentage="progressPercent"
+                    :format="format"></el-progress>
+            </div>
+        </div>
+        <div>
+            <br><br><br><br><br><br>
+            <div style="display: block;">
+                <div style="display: inline-block;width: 50%;vertical-align:top">
+                    <el-input style="font-size: 16px;font-weight: bold;" type="textarea" :autosize="{ minRows: 20}"
+                        v-model="textarea2" id="md-area" :input=mdSwitch()>
+                    </el-input>
+                </div>
+                <div style="display: inline-block;width: 49%;vertical-align:top">
+                    <div id="show-area" class="markdown-body"></div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</body>
+
+<script>
+    hljs.highlightCode = function () {
+        let blocks = document.querySelectorAll('pre code ');
+        [].forEach.call(blocks, hljs.highlightBlock);
+    };
+</script>
+<script>
+    function mdSwitch() {
+        var mdValue = document.getElementById("md-area").value;
+        var converter = new showdown.Converter({ tables: true });
+        var html = converter.makeHtml(mdValue);
+        document.getElementById("show-area").innerHTML = html;
+        hljs.highlightCode()
+    }
+</script>
+<script>
+    var Main = {
+        data() {
+            return {
+                progressPercent: 0,
+                loading: false,
+                onuploading: false,
+                sizerate: '',
+                textarea1: '{% if blog %}{{ blog.name | safe }}{% endif %}',
+                textarea2: '{% if blog %}{{ blog.content | safe }}{% endif %}',
+                upload_token: '{{ upload_token | safe }}',
+                options: [{
+                    value: 'skill',
+                    label: '技术'
+                }, {
+                    value: 'read',
+                    label: '读书'
+                }, {
+                    value: 'something',
+                    label: '杂谈'
+                }],
+                valueclass: '{% if blog %}{{ blog.classfication }}{% endif %}',
+            }
+        },
+        mounted: function () {
+            mdSwitch()
+        },
+        methods: {
+            format(percentage) {
+                return this.sizerate;
+            },
+            changeData(file, fileList) {
+                // 数据小于0.1M的时候按KB显示
+                const size = file.size / 1024 / 1024 > 0.1 ? `(${(file.size / 1024 / 1024).toFixed(1)}M)` : `(${(file.size / 1024).toFixed(1)}KB)`
+                file.name.indexOf('M') > -1 || file.name.indexOf('KB') > -1 ? file.name : file.name += size
+            },
+            handleRequest(uploader) {
+                this.onuploading = true
+                let formdata = new FormData()
+                formdata.append('upload_token', this.upload_token)
+                formdata.append('file', uploader.file)
+                axios.post('/api/upload', formdata, {
+                    headers: { 'Content-Type': 'multipart/form-data' },
+                    timeout: 900000,
+                    onUploadProgress: progressEvent => {
+                        const loadedsize = progressEvent.loaded / 1024 / 1024 > 0.1 ? `${(progressEvent.loaded / 1024 / 1024).toFixed(1)}M` : `${(progressEvent.loaded / 1024).toFixed(1)}KB`
+                        const totaledsize = progressEvent.total / 1024 / 1024 > 0.1 ? `${(progressEvent.total / 1024 / 1024).toFixed(1)}M` : `${(progressEvent.loaded / 1024).toFixed(1)}KB`
+                        this.sizerate = loadedsize + '/' + totaledsize
+                        this.progressPercent = Number((progressEvent.loaded / progressEvent.total * 100).toFixed(2))
+                    },
+
+                }).then((response) => {
+                    uploader.onSuccess(response)
+                }).catch((error) => {
+                    console.log(error)
+                    uploader.onError(error)
+                })
+            },
+            beforeAvatarUpload(file) {
+                const isJPG = file.type === 'image/jpeg';
+                const isPNG = file.type === 'image/png';
+
+                if (!isJPG && !isPNG) {
+                    this.$message.error('上传头像图片只能是 JPG或PNG 格式!');
+                }
+                return isJPG || isPNG;
+            },
+            upload_success(response, file, fileList) {
+                this.onuploading = false
+                this.progressPercent = 0
+                this.sizerate = ''
+                this.textarea2 = this.textarea2 + '  \n![](' + response.data + ')'
+            },
+            upload_success_file(response, file, fileList) {
+                this.onuploading = false
+                this.progressPercent = 0
+                this.sizerate = ''
+                this.textarea2 = this.textarea2 + '  \n[](' + response.data + ')'
+            },
+            upload_error(error, file, fileList) {
+                this.onuploading = false
+                this.progressPercent = 0
+                this.sizerate = ''
+                console.log(error)
+                this.$message.error('上传失败');
+            },
+            release: function () {
+                this.loading = true
+                axios.post('/api/release', {
+                    name: this.textarea1,
+                    content: this.textarea2,
+                    content_html: document.getElementById("show-area").innerHTML,
+                    classfication: this.valueclass,
+                }).then(response => {
+                    this.loading = false
+                    if (response.data == '') {
+                        this.$notify({
+                            title: 'success',
+                            message: '发布成功，即将跳转',
+                            type: 'success',
+                            offset: 100
+                        })
+                        setTimeout(() => {
+                            location.href = '/admin'
+                        }, 1000)
+                    } else {
+                        this.$notify({
+                            title: 'warning',
+                            message: response.data.message,
+                            type: 'warning',
+                            offset: 100
+                        })
+                    }
+                }).catch(error => {
+                    this.loading = false
+                    if(error.response){
+                        this.$notify.error({
+                        title: 'wrong',
+                        message: error.response.data,
+                        offset: 100
+                        })
+                    }
+                    else if(error.request){
+                        this.$notify.error({
+                        title: 'wrong',
+                        message: '网络似乎出现的一点问题...重试一下吧',
+                        offset: 100
+                        })
+                    }
+                    else{
+                        this.$notify.error({
+                        title: 'wrong',
+                        message: '似乎出现的一点问题...重试一下吧',
+                        offset: 100
+                        })
+                    }
+                })
+            }
+        }
+    }
+    var Ctor = Vue.extend(Main)
+    new Ctor().$mount('#app')
+</script>
+
+</html>
